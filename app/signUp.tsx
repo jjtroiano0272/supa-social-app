@@ -1,5 +1,12 @@
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import React, { useRef, useState } from 'react';
+import {
+  Alert,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+} from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, router, useRouter } from 'expo-router';
 import Icon from '../assets/icons';
 import ScreenWrapper from '@/components/ScreenWrapper';
@@ -10,8 +17,12 @@ import { theme } from '@/constants/theme';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
 import { supabase } from '@/lib/supabase';
+import { useTheme as usePaperTheme } from 'react-native-paper';
+import * as Haptics from 'expo-haptics';
+import { translate } from '@/i18n';
 
 const SignUp = () => {
+  const paperTheme = usePaperTheme();
   const router = useRouter();
   const emailRef = useRef('');
   const passwordRef = useRef('');
@@ -19,10 +30,13 @@ const SignUp = () => {
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async () => {
+    // signUpScreen.title
+    // signUpScreen.alerts.fieldsMissing
     if (!emailRef.current || !passwordRef.current) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       Alert.alert(
-        'Sign Up',
-        'Please fill all the fields in order to create your account'
+        translate('signUpScreen:title'),
+        translate('signUpScreen:alerts.fieldsMissing')
       );
     }
 
@@ -44,66 +58,102 @@ const SignUp = () => {
         },
       },
     });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setLoading(false);
 
     console.log(`session: ${JSON.stringify(session, null, 2)}`);
     console.log(`error: ${JSON.stringify(error, null, 2)}`);
 
+    // signUpScreen.title
     if (error) {
-      Alert.alert('Sign up', error.message);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert(translate('signUpScreen:title'), error.message);
     }
   };
 
   return (
-    <ScreenWrapper bg='white'>
-      <StatusBar style='dark' />
+    <ScreenWrapper>
       <View style={styles.container}>
         <BackButton router={router} />
 
         <View>
-          <Text style={styles.welcomeText}>Let's</Text>
-          <Text style={styles.welcomeText}>Get Started</Text>
+          <Text
+            style={[
+              styles.welcomeText,
+              {
+                color: paperTheme.colors.onBackground,
+              },
+            ]}
+          >
+            {translate('signUpScreen:getStarted')}
+          </Text>
         </View>
 
         {/* form */}
         <View style={styles.form}>
-          <Text style={{ fontSize: hp(1.5), color: theme.colors.text }}>
-            Please fill in all details to create your own account
+          <Text
+            style={{ fontSize: hp(1.5), color: paperTheme.colors.onBackground }}
+          >
+            {translate('signUpScreen:formPrompt')}
           </Text>
           <Input
             icon={<Icon name='user' size={26} strokeWidth={1.6} />}
-            placeholder='Enter your name'
+            placeholder={translate('common:nameInputPlaceholder')}
             onChangeText={(value: string) => (nameRef.current = value)}
           />
           <Input
             icon={<Icon name='email' size={26} strokeWidth={1.6} />}
-            placeholder='Enter your email'
+            placeholder={translate('common:emailInputPlaceholder')}
             onChangeText={(value: string) => (emailRef.current = value)}
           />
           <Input
             icon={<Icon name='lockPassword' size={26} strokeWidth={1.6} />}
-            placeholder='Enter your password'
+            placeholder={translate('common:passwordInputPlaceholder')}
             secureTextEntry
             onChangeText={(value: string) => (passwordRef.current = value)}
           />
-          <Text style={styles.forgotPassword}>Forgot password?</Text>
-          <Button title='Sign Up' loading={loading} onPress={onSubmit} />
+          <TouchableOpacity onPress={() => router.push('/forgotPassword')}>
+            <Text
+              style={[
+                styles.forgotPassword,
+                {
+                  color: paperTheme.colors.secondary,
+                },
+              ]}
+            >
+              {translate('common:forgotPassword')}
+            </Text>
+          </TouchableOpacity>
+          <Button
+            title={translate('signUpScreen:title')}
+            loading={loading}
+            onPress={onSubmit}
+          />
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Already have an account?</Text>
+          <Text
+            style={[
+              styles.footerText,
+              {
+                color: paperTheme.colors.secondary,
+              },
+            ]}
+          >
+            {translate('common:alreadyHaveAccount')}
+          </Text>
           <Pressable onPress={() => router.push('/login')}>
             <Text
               style={[
                 styles.footerText,
                 // @ts-ignore
                 {
-                  color: theme.colors.primaryDark,
+                  color: paperTheme.colors.secondary,
                   fontWeight: theme.fonts.semibold,
                 },
               ]}
             >
-              Login
+              {translate('common:login')}
             </Text>
           </Pressable>
         </View>
@@ -125,7 +175,6 @@ const styles = StyleSheet.create({
     fontSize: hp(4),
     // @ts-ignore
     fontWeight: theme.fonts.bold,
-    color: theme.colors.text,
   },
   form: {
     gap: 25,
@@ -134,7 +183,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     // @ts-ignore
     fontWeight: theme.fonts.semibold,
-    color: theme.colors.text,
   },
   footer: {
     flexDirection: 'row',
@@ -144,7 +192,6 @@ const styles = StyleSheet.create({
   },
   footerText: {
     textAlign: 'center',
-    color: theme.colors.text,
     fontSize: hp(1.6),
   },
 });

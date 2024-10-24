@@ -9,13 +9,14 @@ export const getUserData = async (userId: string) => {
       .single();
 
     if (error) {
+      console.log(`getUserData error: ${JSON.stringify(error, null, 2)}`);
       return { success: false, msg: error.message };
     }
 
     return { success: true, data };
     // Pretty sure there isn't a true way to handle it
   } catch (error: any) {
-    console.log(`error: ${JSON.stringify(error, null, 2)}`);
+    console.log(`getUserData error: ${JSON.stringify(error, null, 2)}`);
     return { success: false, msg: error.message };
   }
 };
@@ -27,13 +28,31 @@ export const updateUser = async (userId: string, data: any) => {
       .update(data)
       .eq('id', userId);
     if (error) {
+      console.log(`updateUser error: ${JSON.stringify(error, null, 2)}`);
       return { success: false, msg: error.message };
     }
 
     return { success: true, data };
     // Pretty sure there isn't a true way to handle it
   } catch (error: any) {
-    console.log(`error: ${JSON.stringify(error, null, 2)}`);
+    console.log(`updateUser error: ${JSON.stringify(error, null, 2)}`);
     return { success: false, msg: error.message };
+  }
+};
+
+export const removeUser = async (userId?: string) => {
+  try {
+    // Deletes user from auth, but not users table
+    const { data, error } = await supabase.rpc('delete_user');
+
+    if (error) {
+      console.log(`removeUser error: `, error);
+      return { success: false, msg: 'Could not delete the user' };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.log(`removeUser error: `, error);
+    return { success: false, msg: 'Could not delete the user' };
   }
 };

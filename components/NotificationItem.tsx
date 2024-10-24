@@ -5,8 +5,10 @@ import { theme } from '@/constants/theme';
 import { hp } from '@/helpers/common';
 import Avatar from './Avatar';
 import moment from 'moment';
+import { useTheme } from 'react-native-paper';
 
 const NotificationItem = ({ item, router }: any) => {
+  const paperTheme = useTheme();
   const handleClick = () => {
     let { postId, commentId } = JSON.parse(item?.data);
     router.push({ pathname: '/postDetails', params: { postId, commentId } });
@@ -17,16 +19,34 @@ const NotificationItem = ({ item, router }: any) => {
   // console.log(`notification item: ${JSON.stringify(item, null, 2)}`);
 
   return (
-    <TouchableOpacity style={styles.container} onPress={handleClick}>
+    <TouchableOpacity
+      style={[
+        styles.container,
+        {
+          backgroundColor: paperTheme.colors.backdrop,
+          borderColor: paperTheme.colors.outline,
+        },
+      ]}
+      onPress={handleClick}
+    >
       <Avatar uri={item?.sender?.image} size={hp(5)} />
       <View style={styles.nameTitle}>
-        <Text style={styles.text}>{item?.sender?.name}</Text>
-        <Text style={[styles.text, { color: theme.colors.textDark }]}>
+        <Text
+          style={[
+            styles.text,
+            {
+              color: paperTheme.colors.onBackground,
+            },
+          ]}
+        >
+          {item?.sender?.name}
+        </Text>
+        <Text style={[styles.text, { color: paperTheme.colors.onBackground }]}>
           {item?.title}
         </Text>
       </View>
 
-      <Text style={[styles.text, { color: theme.colors.textLight }]}>
+      <Text style={[styles.text, { color: paperTheme.colors.onSecondary }]}>
         {createdAt}
       </Text>
     </TouchableOpacity>
@@ -42,9 +62,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    backgroundColor: 'white',
     borderWidth: 0.5,
-    borderColor: theme.colors.darkLight,
     padding: 15,
     // paddingVertical:12,
     borderRadius: theme.radius.xxl,
@@ -55,6 +73,5 @@ const styles = StyleSheet.create({
     fontSize: hp(1.6),
     // @ts-ignore
     fontWeight: theme.fonts.medium,
-    color: theme.colors.text,
   },
 });

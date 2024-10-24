@@ -25,8 +25,11 @@ import CommentItem from '@/components/CommentItem';
 import { supabase } from '@/lib/supabase';
 import { getUserData } from '@/services/userService';
 import { createNotification } from '@/services/notificationService';
+import { useTheme as usePaperTheme } from 'react-native-paper';
+import { translate } from '@/i18n';
 
 const PostDetails = () => {
+  const paperTheme = usePaperTheme();
   const { postId, commentId } = useLocalSearchParams();
   const { user } = useAuth();
   const router = useRouter();
@@ -108,7 +111,7 @@ const PostDetails = () => {
       inputRef?.current?.clear();
       commentRef.current = '';
     } else {
-      Alert.alert('Comment', res.msg);
+      Alert.alert(translate('common:comment'), res.msg);
     }
   };
 
@@ -126,7 +129,7 @@ const PostDetails = () => {
         return updatedPost;
       });
     } else {
-      Alert.alert('Comment', res.msg);
+      Alert.alert(translate('common:comment'), res.msg);
     }
   };
 
@@ -137,7 +140,7 @@ const PostDetails = () => {
     if (res.success) {
       router.back();
     } else {
-      Alert.alert('Post', res.msg);
+      Alert.alert(translate('common:post'), res.msg);
     }
   };
 
@@ -148,7 +151,12 @@ const PostDetails = () => {
 
   if (startLoading) {
     return (
-      <View style={styles.center}>
+      <View
+        style={[
+          styles.center,
+          { backgroundColor: paperTheme.colors.background },
+        ]}
+      >
         <Loading />
       </View>
     );
@@ -159,13 +167,27 @@ const PostDetails = () => {
       <View
         style={[styles.center, { justifyContent: 'center', marginTop: 100 }]}
       >
-        <Text style={styles.notFound}>No post here!</Text>
+        <Text
+          style={[
+            styles.notFound,
+            {
+              color: paperTheme.colors.onBackground,
+            },
+          ]}
+        >
+          {translate('postDetailsSreen:noPosts')}
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: paperTheme.colors.background },
+      ]}
+    >
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.list}
@@ -184,8 +206,8 @@ const PostDetails = () => {
         <View style={styles.inputContainer}>
           <Input
             inputRef={inputRef}
-            placeholder={'type comment'}
-            placeholderTextColor={theme.colors.textLight}
+            placeholder={translate('postDetailsSreen:commentInputPlaceholder')}
+            // placeholderTextColor={paperTheme.colors.onBackground}
             containerStyle={{
               flex: 1,
               height: hp(6.2),
@@ -198,8 +220,16 @@ const PostDetails = () => {
               <Loading size={'small'} />
             </View>
           ) : (
-            <TouchableOpacity style={styles.sendIcon} onPress={onNewComment}>
-              <Icon name='send' color={theme.colors.primaryDark} />
+            <TouchableOpacity
+              style={[
+                styles.sendIcon,
+                {
+                  borderColor: paperTheme.colors.outline,
+                },
+              ]}
+              onPress={onNewComment}
+            >
+              <Icon name='send' color={paperTheme.colors.primary} />
             </TouchableOpacity>
           )}
         </View>
@@ -215,8 +245,10 @@ const PostDetails = () => {
             />
           ))}
           {post?.comments?.length == 0 && (
-            <Text style={{ color: theme.colors.text, marginLeft: 5 }}>
-              Be the first comment!
+            <Text
+              style={{ color: paperTheme.colors.onBackground, marginLeft: 5 }}
+            >
+              {translate('postDetailsSreen:noCommentsYet')}
             </Text>
           )}
         </View>
@@ -228,7 +260,7 @@ const PostDetails = () => {
 export default PostDetails;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'white', paddingVertical: wp(7) },
+  container: { flex: 1, paddingVertical: wp(7) },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -239,7 +271,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 0.8,
-    borderColor: theme.colors.primary,
     borderRadius: theme.radius.lg,
     borderCurve: 'continuous',
     height: hp(5.8),
@@ -248,7 +279,6 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   notFound: {
     fontSize: hp(2.5),
-    color: theme.colors.text,
     // @ts-ignore
     fontWeight: theme.fonts.medium,
   },

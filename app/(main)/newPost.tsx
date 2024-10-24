@@ -23,13 +23,21 @@ import * as ImagePicker from 'expo-image-picker';
 import { getSupabaseFileUrl } from '@/services/imageService';
 import { Video } from 'expo-av';
 import { createOrUpdatePost } from '@/services/postService';
+import { useTheme as usePaperTheme } from 'react-native-paper';
+import Input from '@/components/Input';
+import Picker from '@/components/Picker';
+import { translate } from '@/i18n';
 
 const NewPost = () => {
+  const paperTheme = usePaperTheme();
   const post = useLocalSearchParams();
   console.log(`post (loalSearchParams): ${JSON.stringify(post, null, 2)}`);
   const { user } = useAuth();
   const bodyRef = useRef('');
   const editorRef = useRef(null);
+  const clientNameRef = useRef('');
+  const formulaDescriptionRef = useRef('');
+  const formulaTypeRef = useRef('');
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<
@@ -71,15 +79,27 @@ const NewPost = () => {
   };
   const onSubmit = async () => {
     if (!bodyRef.current && !file) {
-      Alert.alert('Post', 'Choose some media or something to post!');
+      Alert.alert(
+        translate('common:post'),
+        translate('newPostScreen:chooseSomeMedia')
+      );
       return;
     }
     console.log(`body: ${JSON.stringify(bodyRef.current, null, 2)}`);
     console.log(`file: ${JSON.stringify(file, null, 2)}`);
 
-    let data = { file, body: bodyRef.current, userId: user?.id };
+    let data = {
+      file,
+      body: bodyRef?.current,
+      client_name: clientNameRef?.current,
+      formula_info: {
+        formula_type: formulaTypeRef?.current,
+        formula_description: formulaDescriptionRef?.current,
+      },
+      userId: user?.id,
+    };
 
-    if (post && post.id) data.id = post.id;
+    if (post && post?.id) data.id = post.id;
 
     // create post
     setLoading(true);
@@ -92,6 +112,7 @@ const NewPost = () => {
       setFile(null);
       bodyRef.current = '';
       editorRef.current?.setContentHTML('');
+      clientNameRef.current = '';
       router.back();
     } else {
       Alert.alert('Post', res.msg);
@@ -128,9 +149,9 @@ const NewPost = () => {
   };
 
   return (
-    <ScreenWrapper bg='white'>
+    <ScreenWrapper>
       <View style={styles.container}>
-        <Header title='Create Post' />
+        <Header title={translate('newPostScreen:title')} />
         <ScrollView
           contentContainerStyle={{ gap: 20 }}
           showsVerticalScrollIndicator={false}
@@ -143,10 +164,55 @@ const NewPost = () => {
               rounded={theme.radius.xl}
             />
             <View style={{ gap: 2 }}>
-              <Text style={styles.username}>{user && user.name}</Text>
-              <Text style={styles.publicText}>Public</Text>
+              <Text
+                style={[
+                  styles.username,
+                  {
+                    color: paperTheme.colors.onBackground,
+                  },
+                ]}
+              >
+                {user && user.name}
+              </Text>
+              <Text
+                style={[
+                  styles.publicText,
+                  {
+                    color: paperTheme.colors.secondary,
+                  },
+                ]}
+              >
+                {translate('common:public')}
+              </Text>
             </View>
           </View>
+
+          <Input
+            autoCapitalize='words'
+            icon={<Icon name='user' size={26} strokeWidth={1.6} />}
+            placeholder={translate('common:clientName')}
+            onChangeText={(value: string) => (clientNameRef.current = value)}
+          />
+
+          {/* formula type */}
+          <Input
+            // icon={<Icon name='user' size={26} strokeWidth={1.6} />}
+            autoCapitalize='words'
+            placeholder={translate('newPostScreen:formulaTypePlaceholder')}
+            onChangeText={(value: string) => (formulaTypeRef.current = value)}
+          />
+          {/* formula description */}
+          <Input
+            // icon={<Icon name='user' size={26} strokeWidth={1.6} />}
+            autoCapitalize='words'
+            placeholder={translate(
+              'newPostScreen:formulaDescriptionPlaceholder'
+            )}
+            onChangeText={(value: string) =>
+              (formulaDescriptionRef.current = value)
+            }
+          />
+
           <View style={styles.textEditor}>
             <RichTextEditor
               editorRef={editorRef}
@@ -177,14 +243,38 @@ const NewPost = () => {
             </View>
           )}
 
-          <View style={styles.media}>
-            <Text style={styles.addImageText}>Add to post</Text>
+          <View
+            style={[
+              styles.media,
+              {
+                borderColor: paperTheme.colors.outline,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.addImageText,
+                {
+                  color: paperTheme.colors.onBackground,
+                },
+              ]}
+            >
+              {translate('newPostScreen:addToPost')}
+            </Text>
             <View style={styles.mediaIcons}>
               <TouchableOpacity onPress={() => onPick(true)}>
-                <Icon name='image' size={30} color={theme.colors.dark} />
+                <Icon
+                  name='image'
+                  size={30}
+                  color={paperTheme.colors.onBackground}
+                />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => onPick(false)}>
-                <Icon name='video' size={33} color={theme.colors.dark} />
+                <Icon
+                  name='video'
+                  size={33}
+                  color={paperTheme.colors.onBackground}
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -192,7 +282,11 @@ const NewPost = () => {
 
         <Button
           buttonStyle={{ height: hp(6.2) }}
-          title={post && post.id ? 'Update' : 'Post'}
+          title={
+            post && post.id
+              ? translate('common:update')
+              : translate('common:postActionButton')
+          }
           loading={loading}
           hasShadow={false}
           onPress={onSubmit}
@@ -220,7 +314,7 @@ const styles = StyleSheet.create({
     fontSize: hp(2.5),
     // @ts-ignore
     fontWeight: theme.fonts.semibold,
-    color: theme.colors.text,
+    // color: theme.colors.text,
     textAlign: 'center',
   },
   header: {
@@ -232,7 +326,6 @@ const styles = StyleSheet.create({
     fontSize: hp(2.2),
     // @ts-ignore
     fontWeight: theme.fonts.semibold,
-    color: theme.colors.text,
   },
   avatar: {
     height: hp(6.5),
@@ -246,7 +339,6 @@ const styles = StyleSheet.create({
     fontSize: hp(1.7),
     // @ts-ignore
     fontWeight: theme.fonts.medium,
-    color: theme.colors.textLight,
   },
   textEditor: {
     // marginTop: 10
@@ -260,7 +352,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     borderRadius: theme.radius.xl,
     borderCurve: 'continuous',
-    borderColor: theme.colors.gray,
   },
   mediaIcons: {
     flexDirection: 'row',
@@ -270,8 +361,7 @@ const styles = StyleSheet.create({
   addImageText: {
     fontSize: hp(1.9),
     // @ts-ignore
-    fontWeight: theme.fonts.semibold,
-    color: theme.colors.text,
+    fontWeight: theme.fonts.medium,
   },
   imageIcon: {
     // backgroundColor: theme.colors.gray,

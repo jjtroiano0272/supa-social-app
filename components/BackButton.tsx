@@ -3,15 +3,26 @@ import React from 'react';
 import { Link } from 'expo-router';
 import Icon from '@/assets/icons';
 import { theme } from '@/constants/theme';
+import { useTheme as usePaperTheme } from 'react-native-paper';
 
 const BackButton = ({ size = 26, router }: any) => {
+  const paperTheme = usePaperTheme();
+
   return (
-    <Pressable onPress={() => router.back()} style={styles.button}>
+    <Pressable
+      onPress={() => router.back()}
+      style={[
+        styles.button,
+        {
+          // backgroundColor: paperTheme.colors.primary,
+        },
+      ]}
+    >
       <Icon
         name='arrowLeft'
-        strokeWidth={2.6}
+        strokeWidth={1.6}
         size={size}
-        color={theme.colors.text}
+        color={paperTheme.colors.onBackground}
       />
     </Pressable>
   );
@@ -25,7 +36,5 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     padding: 5,
     borderRadius: theme.radius.sm,
-    backgroundColor: 'rgba(0,0,0,0.7',
   },
 });
-

@@ -8,6 +8,8 @@ import {
 } from 'react-native-pell-rich-editor';
 import { theme } from '@/constants/theme';
 import Button from './Button';
+import { useTheme as usePaperTheme } from 'react-native-paper';
+import { translate } from '@/i18n';
 
 type Props = {
   editorRef: any;
@@ -15,47 +17,66 @@ type Props = {
 };
 
 const RichTextEditor = ({ editorRef, onChange }: Props) => {
+  const paperTheme = usePaperTheme();
+
   return (
     <View style={{ minHeight: 285 }}>
       <RichToolbar
         actions={[
-          actions.setStrikethrough,
-          actions.removeFormat,
+          // actions.setStrikethrough,
           actions.setBold,
           actions.setItalic,
           actions.insertOrderedList,
           actions.blockquote,
-          actions.alignLeft,
-          actions.alignCenter,
-          actions.alignRight,
-          actions.code,
+          // actions.alignLeft,
+          // actions.alignCenter,
+          // actions.alignRight,
+          // actions.code,
           actions.line,
           // custom ones
           actions.heading1,
           actions.heading4,
+
+          actions.removeFormat,
         ]}
         iconMap={{
           [actions.heading1]: ({ tintColor }: { tintColor: string }) => (
-            <Text style={{ color: tintColor }}>H1</Text>
+            <Text style={{ color: tintColor, fontWeight: '800' }}>H1</Text>
           ),
           [actions.heading4]: ({ tintColor }: { tintColor: string }) => (
-            <Text style={{ color: tintColor }}>H4</Text>
+            <Text style={{ color: tintColor, fontWeight: '800' }}>H4</Text>
           ),
         }}
-        style={styles.richBar}
+        style={[
+          styles.richBar,
+          {
+            backgroundColor: paperTheme.colors.backdrop,
+            // placeholderColor: theme.colors.gray,
+          },
+        ]}
         flatContainerStyle={styles.flatStyle}
-        selectedIconTint={theme.colors.dark}
+        iconTint={paperTheme.colors.onBackground}
+        selectedIconTint={paperTheme.colors.onBackground}
         editor={editorRef}
         disabled={false}
       />
       {/*  WARN  Toolbar has no editor. Please make sure the prop getEditor returns a ref to the editor component. */}
       <RichEditor
         ref={editorRef}
-        containerStyle={styles.rich}
-        editorStyle={styles.contentStyle}
-        placeholder={"What's on your mind?"}
+        containerStyle={[
+          styles.rich,
+          {
+            borderColor: paperTheme.colors.backdrop,
+          },
+        ]}
+        editorStyle={{
+          color: paperTheme.colors.onBackground,
+          backgroundColor: paperTheme.colors.background,
+        }}
+        placeholder={translate('newPostScreen:postBodyPlaceholder')}
         onChange={onChange}
         onBlur={() => editorRef.current.blurContentEditor()}
+        autoCapitalize='sentences'
       />
     </View>
   );
@@ -70,7 +91,6 @@ const styles = StyleSheet.create({
   richBar: {
     borderTopRightRadius: theme.radius.xl,
     borderTopLeftRadius: theme.radius.xl,
-    backgroundColor: theme.colors.gray,
   },
   rich: {
     minHeight: 240,
@@ -79,13 +99,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 0,
     borderBottomLeftRadius: theme.radius.xl,
     borderBottomRightRadius: theme.radius.xl,
-    borderColor: theme.colors.gray,
     padding: 5,
   },
-  contentStyle: {
-    color: theme.colors.textDark,
-    // placeholderColor: theme.colors.gray,
-  },
+
   flatStyle: {
     paddingHorizontal: 8,
     gap: 3,

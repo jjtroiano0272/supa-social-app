@@ -1,6 +1,12 @@
 import { supabase } from '@/lib/supabase';
 import { uploadFile } from './imageService';
 
+// for example, post that is passed on in newPost looks like
+/* let data = {
+      file,
+      body: bodyRef?.current,
+      userId: user?.id,
+    }; */
 export const createOrUpdatePost = async (post: any) => {
   try {
     if (post.file && typeof post.file == 'object') {
@@ -8,8 +14,9 @@ export const createOrUpdatePost = async (post: any) => {
       let folderName = isImage ? 'postImages' : 'postVideos';
       let fileResult = await uploadFile(folderName, post?.file?.uri, isImage);
 
-      if (fileResult.success) post.file = fileResult.data;
-      else {
+      if (fileResult.success) {
+        post.file = fileResult.data;
+      } else {
         return fileResult;
       }
     }
@@ -84,7 +91,7 @@ export const fetchPostDetails = async (postId: string) => {
       .select(
         `
         *, 
-        user: users (id, name, image),
+        user: users(id, name, image),
         postLikes (*),
         comments (*, user: users(id, name, image))
         `
@@ -94,7 +101,8 @@ export const fetchPostDetails = async (postId: string) => {
       .single();
 
     if (error) {
-      console.error(`fetchPostDetails error: `, error);
+      // Code 22P02 is a current bug recognized in supabase: https://tinyurl.com/msbb9dtt
+      error.code != '22P02' && console.error(`fetchPostDetails error: `, error);
       return { success: false, msg: 'Could not fetch post details' };
     }
 
@@ -125,7 +133,7 @@ export const createPostLike = async (postLike: any) => {
   }
 };
 
-export const removePostLike = async (postId, userId) => {
+export const removePostLike = async (postId: string, userId: string) => {
   try {
     const { error } = await supabase
       .from('postLikes')
@@ -145,7 +153,7 @@ export const removePostLike = async (postId, userId) => {
   }
 };
 
-export const createComment = async comment => {
+export const createComment = async (comment: string) => {
   try {
     const { data, error } = await supabase
       .from('comments')
@@ -165,7 +173,7 @@ export const createComment = async comment => {
   }
 };
 
-export const removeComment = async commentId => {
+export const removeComment = async (commentId: string) => {
   try {
     const { error } = await supabase
       .from('comments')

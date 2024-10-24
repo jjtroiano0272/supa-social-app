@@ -19,7 +19,15 @@ import { hp, wp } from '@/helpers/common';
 import { theme } from '@/constants/theme';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
-import { updateUser } from '@/services/userService';
+import { removeUser, updateUser } from '@/services/userService';
+import {
+  useTheme as usePaperTheme,
+  Button as PaperButton,
+} from 'react-native-paper';
+import { faker, tr } from '@faker-js/faker';
+import { supabase } from '@/lib/supabase';
+import * as Haptics from 'expo-haptics';
+import { translate } from '@/i18n';
 
 type User = {
   name: string;
@@ -30,6 +38,7 @@ type User = {
 };
 
 const editProfile = () => {
+  const paperTheme = usePaperTheme();
   const { user: currentUser, setUserData } = useAuth();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -72,7 +81,7 @@ const editProfile = () => {
     let { name, phoneNumber, address, image, bio } = userData;
 
     if (!name || !phoneNumber || !address || !bio || !image) {
-      Alert.alert('Please fill out all fields!');
+      Alert.alert(translate('common:fieldsMissing'));
       return;
     }
 
@@ -93,34 +102,109 @@ const editProfile = () => {
     }
   };
 
+  const submitDeleteAccount = async () => {
+    const res = await removeUser(currentUser?.id);
+
+    if (res.success) {
+      await supabase.auth.signOut();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.replace('/welcome');
+    } else {
+      Alert.alert(translate('common:deleteTitle'), res.msg);
+    }
+  };
+
+  const onPressDeleteAccount = async () => {
+    Alert.alert(
+      translate('editProfileScreen:deletePromptTitle'),
+      translate('editProfileScreen:deletePromptDescription'),
+      [
+        {
+          text: translate('common:cancel'),
+          onPress: () => {},
+          style: 'cancel',
+        },
+        {
+          text: translate('common:confirmDelete'),
+          onPress: () => {
+            // Adjective +  Noun
+            const randomizedString = [faker.word.adjective(), faker.word.noun()]
+              .map((word, index) =>
+                index === 0
+                  ? word.charAt(0).toUpperCase() + word.slice(1)
+                  : word.charAt(0).toUpperCase() + word.slice(1)
+              )
+              .join('');
+
+            Alert.prompt(
+              translate('common:areYouSure'),
+              `${translate(
+                'editProfileScreen:deleteAccountFinal'
+              )}\n\n${randomizedString}`,
+              userEnteredText => {
+                // Check that text matches
+                if (userEnteredText == randomizedString) {
+                  submitDeleteAccount();
+                }
+              }
+            );
+          },
+          style: 'destructive',
+        },
+      ],
+      {
+        cancelable: true,
+        onDismiss: () => {},
+      }
+    );
+  };
+
   let imageSource =
     user.image && typeof user.image == 'object'
       ? user.image
-      : getUserImageSrc(user.image);
-
-  console.log(`imageSource: ${JSON.stringify(imageSource, null, 2)}`);
-  console.log(`user obj: ${JSON.stringify(user, null, 2)}`);
+      : getUserImageSrc(user?.image);
 
   return (
     <ScreenWrapper>
       <View style={styles.container}>
         <ScrollView style={{ flex: 1 }}>
-          <Header title={'Edit Profile'} />
+          <Header title={translate('editProfileScreen:title')} />
 
           <View style={styles.form}>
             <View style={styles.avatarContainer}>
-              <Image source={imageSource} style={styles.avatar} />
-              <Pressable style={styles.cameraIcon} onPress={onPickImage}>
+              <Image
+                source={imageSource}
+                style={[
+                  styles.avatar,
+                  {
+                    borderColor: paperTheme.colors.outline,
+                  },
+                ]}
+              />
+              <Pressable
+                style={[
+                  styles.cameraIcon,
+                  {
+                    shadowColor: paperTheme.colors.shadow,
+                  },
+                ]}
+                onPress={onPickImage}
+              >
                 <Icon name='userEdit' />
               </Pressable>
             </View>
 
-            <Text style={{ fontSize: hp(1.5), color: theme.colors.text }}>
-              Please fill in your profile details
+            <Text
+              style={{
+                fontSize: hp(1.5),
+                color: paperTheme.colors.onBackground,
+              }}
+            >
+              {translate('editProfileScreen:formPrompt')}
             </Text>
             <Input
               icon={<Icon name='user' />}
-              placeholder='Enter name'
+              placeholder={translate('common:nameInputPlaceholder')}
               value={user.name}
               onChangeText={(value: string) =>
                 setUser({ ...user, name: value })
@@ -128,7 +212,7 @@ const editProfile = () => {
             />
             <Input
               icon={<Icon name='phone' />}
-              placeholder='Enter phone number'
+              placeholder={translate('common:phoneInputPlaceholder')}
               value={user.phoneNumber}
               onChangeText={(value: string) =>
                 setUser({ ...user, phoneNumber: value })
@@ -136,21 +220,43 @@ const editProfile = () => {
             />
             <Input
               icon={<Icon name='location' />}
-              placeholder='Enter address'
+              placeholder={translate('common:addressInputPlaceholder')}
               value={user.address}
               onChangeText={(value: string) =>
                 setUser({ ...user, address: value })
               }
             />
             <Input
-              placeholder='Enter bio'
+              placeholder={translate('common:bioInputPlaceholder')}
               value={user.bio}
               multiline={true}
               containerStyle={styles.bio}
               onChangeText={(value: string) => setUser({ ...user, bio: value })}
             />
 
-            <Button title='Update' loading={loading} onPress={onSubmit} />
+            <Button
+              title={translate('common:update')}
+              loading={loading}
+              onPress={onSubmit}
+            />
+            {/* <Button
+              buttonStyle={
+                {
+                  // backgroundColor: '#ff0000',
+                }
+              }
+              title='DELETE ACCOUNT'
+              loading={loading}
+              onPress={onSubmitDeleteAccount}
+            /> */}
+
+            <PaperButton
+              children={translate('editProfileScreen:deleteAccountButtonTitle')}
+              uppercase
+              mode='outlined'
+              onPress={onPressDeleteAccount}
+              textColor={paperTheme.colors.error}
+            />
           </View>
         </ScrollView>
       </View>
@@ -172,7 +278,6 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.xxl * 1.8,
     borderCurve: 'continuous',
     borderWidth: 1,
-    borderColor: theme.colors.darkLight,
   },
   cameraIcon: {
     position: 'absolute',
@@ -181,7 +286,6 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 50,
     backgroundColor: 'white',
-    shadowColor: theme.colors.textLight,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 5,
@@ -190,7 +294,7 @@ const styles = StyleSheet.create({
   input: {
     flexDirection: 'row',
     borderWidth: wp(0.4),
-    borderColor: theme.colors.text,
+    // borderColor: theme.colors.text,
     borderRadius: theme.radius.xxl,
     borderCurve: 'continuous',
     padding: 17,

@@ -6,6 +6,7 @@ import { hp } from '@/helpers/common';
 import Avatar from './Avatar';
 import moment from 'moment';
 import Icon from '@/assets/icons';
+import { useTheme as usePaperTheme } from 'react-native-paper';
 
 const CommentItem = ({
   item,
@@ -13,6 +14,7 @@ const CommentItem = ({
   onDelete = () => {},
   highlight = false,
 }) => {
+  const paperTheme = usePaperTheme();
   const createdAt = moment(item?.created_at).format('MMM d');
 
   const handleDelete = () => {
@@ -33,7 +35,22 @@ const CommentItem = ({
   return (
     <View style={styles.container}>
       <Avatar uri={item?.user?.image} />
-      <View style={[styles.content, highlight && styles.highlight]}>
+      <View
+        style={[
+          styles.content,
+          {
+            backgroundColor: paperTheme.colors.backdrop,
+          },
+          highlight && [
+            styles.highlight,
+            {
+              backgroundColor: paperTheme.colors.background,
+              borderColor: paperTheme.colors.outline,
+              shadowColor: paperTheme.colors.shadow,
+            },
+          ],
+        ]}
+      >
         <View
           style={{
             flexDirection: 'row',
@@ -42,19 +59,33 @@ const CommentItem = ({
           }}
         >
           <View style={styles.nameContainer}>
-            <Text style={styles.text}>{item?.user?.name}</Text>
+            <Text
+              style={[
+                styles.text,
+                {
+                  color: paperTheme.colors.onBackground,
+                },
+              ]}
+            >
+              {item?.user?.name}
+            </Text>
             <Text>•</Text>
-            <Text style={[styles.text, { color: theme.colors.textLight }]}>
+            <Text style={[styles.text, { color: paperTheme.colors.secondary }]}>
               {createdAt}
             </Text>
           </View>
           {canDelete && (
             <TouchableOpacity onPress={handleDelete}>
-              <Icon name='delete' size={20} color={theme.colors.rose} />
+              <Icon name='delete' size={20} color={paperTheme.colors.error} />
             </TouchableOpacity>
           )}
         </View>
-        <Text style={[styles.text, { fontWeight: 'normal' }]}>
+        <Text
+          style={[
+            styles.text,
+            { fontWeight: 'normal', color: paperTheme.colors.onBackground },
+          ]}
+        >
           {item?.text}
         </Text>
       </View>
@@ -71,7 +102,6 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   content: {
-    backgroundColor: 'rgba (0,0,0,0.06)',
     flex: 1,
     gap: 5,
     paddingHorizontal: 14,
@@ -81,9 +111,6 @@ const styles = StyleSheet.create({
   },
   highlight: {
     borderWidth: 0.2,
-    backgroundColor: 'white',
-    borderColor: theme.colors.dark,
-    shadowColor: theme.colors.dark,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -98,6 +125,5 @@ const styles = StyleSheet.create({
     fontSize: hp(1.6),
     // @ts-ignore
     fontWeight: theme.fonts.medium,
-    color: theme.colors.dark,
   },
 });

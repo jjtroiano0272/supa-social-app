@@ -1,10 +1,24 @@
 import { LogBox, StyleSheet, Text, View } from 'react-native';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, Stack, useRouter } from 'expo-router';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { getUserData } from '@/services/userService';
 import { PaperProvider as PaperThemeProvider } from 'react-native-paper';
+// import * as i18n from '@/i18n';
+// import i18next from 'i18next';
+import { initI18n } from '@/i18n';
+
+// i18next.init({
+//   fallbackLng: 'en',
+//   resources: {
+//     en: {
+//       translation: {
+//         key: 'hello world',
+//       },
+//     },
+//   },
+// });
 
 /* 
  ERROR  Warning: TNodeChildrenRenderer: Support for defaultProps will be removed from function components in a future major release. Use JavaScript default parameters instead. */
@@ -26,12 +40,16 @@ const _layout = () => {
 const MainLayout = () => {
   const { setAuth, setUserData } = useAuth();
   const router = useRouter();
+  const [isI18nInitialized, setIsI18nInitialized] = useState(false);
+
+  useEffect(() => {
+    initI18n().then(() => setIsI18nInitialized(true));
+    // .then(() => loadDateFnsLocale());
+  }, []);
 
   useEffect(() => {
     supabase.auth.onAuthStateChange((_auth, session) => {
-      console.log(`session.user: ${JSON.stringify(session?.user.id, null, 2)}`);
-
-      if (session) {
+      if (session && session?.user?.email) {
         setAuth(session?.user);
         updateUserData(session?.user, session?.user?.email);
         router.replace('/home');
@@ -54,6 +72,11 @@ const MainLayout = () => {
         name='(main)/postDetails'
         options={{ presentation: 'modal' }}
       />
+      {/* TODO */}
+      {/* <Stack.Screen
+        name='(main)/confirmDeleteAccount'
+        options={{ presentation: 'modal' }}
+      /> */}
     </Stack>
   );
 };

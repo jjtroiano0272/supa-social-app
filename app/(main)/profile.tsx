@@ -20,10 +20,17 @@ import Avatar from '@/components/Avatar';
 import { fetchPosts } from '@/services/postService';
 import PostCard from '@/components/PostCard';
 import Loading from '@/components/Loading';
+import {
+  useTheme as usePaperTheme,
+  Button as PaperButton,
+  IconButton,
+} from 'react-native-paper';
+import { translate } from '@/i18n';
 
 var limit = 0;
 
 const Profile = () => {
+  const paperTheme = usePaperTheme();
   const { user, setAuth } = useAuth();
   const router = useRouter();
   const [posts, setPosts] = useState<any>([]);
@@ -35,7 +42,7 @@ const Profile = () => {
     const { error } = await supabase.auth.signOut();
 
     if (error) {
-      Alert.alert('Sign out', 'Error signing out');
+      Alert.alert(translate('common:signOut'), translate('errors:signOut'));
     }
   };
 
@@ -56,18 +63,22 @@ const Profile = () => {
   };
 
   const handleLogout = async () => {
-    Alert.alert('Confirm', 'Are you sure you want to log out?', [
-      {
-        text: 'Cancel',
-        onPress: () => console.log(`canceled`),
-        style: 'cancel',
-      },
-      {
-        text: 'Logout',
-        onPress: () => onLogout(),
-        style: 'destructive',
-      },
-    ]);
+    Alert.alert(
+      translate('common:confirm'),
+      translate('common:confirmLogout'),
+      [
+        {
+          text: translate('common:cancel'),
+          onPress: () => console.log(`canceled`),
+          style: 'cancel',
+        },
+        {
+          text: translate('common:logout'),
+          onPress: () => onLogout(),
+          style: 'destructive',
+        },
+      ]
+    );
   };
 
   return (
@@ -75,7 +86,26 @@ const Profile = () => {
       <FlatList
         data={posts}
         ListHeaderComponent={
-          <UserHeader user={user} router={router} handleLogout={handleLogout} />
+          <>
+            <UserHeader
+              user={user}
+              router={router}
+              handleLogout={handleLogout}
+            />
+            <View
+              style={{
+                marginVertical: 20,
+                justifyContent: 'center',
+                alignSelf: 'center',
+                borderBottomColor: paperTheme.colors.onBackground,
+                borderBottomWidth: 0.3,
+                width: wp(50),
+              }}
+            />
+            <Text style={{ color: paperTheme.colors.secondary }}>
+              {translate('profileScreen:myRecentPosts')}
+            </Text>
+          </>
         }
         ListHeaderComponentStyle={{ marginBottom: 30 }}
         showsVerticalScrollIndicator={false}
@@ -95,7 +125,16 @@ const Profile = () => {
             </View>
           ) : (
             <View style={{ marginVertical: 30 }}>
-              <Text style={styles.noPosts}>Nothing more here!</Text>
+              <Text
+                style={[
+                  styles.noPosts,
+                  {
+                    color: paperTheme.colors.onBackground,
+                  },
+                ]}
+              >
+                {translate('common:endOfList')}
+              </Text>
             </View>
           )
         }
@@ -105,14 +144,27 @@ const Profile = () => {
 };
 
 const UserHeader = ({ user, router, handleLogout }) => {
+  const paperTheme = usePaperTheme();
   return (
     <View
-      style={{ flex: 1, backgroundColor: 'white', paddingHorizontal: wp(4) }}
+      style={{
+        flex: 1,
+        backgroundColor: paperTheme.colors.background,
+        paddingHorizontal: wp(4),
+      }}
     >
       <View>
-        <Header title='Profile' showBackButton={true} />
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Icon name={'logout'} />
+        <Header title={translate('common:profile')} showBackButton={true} />
+        <TouchableOpacity
+          style={[
+            styles.logoutButton,
+            {
+              backgroundColor: paperTheme.colors.error,
+            },
+          ]}
+          onPress={handleLogout}
+        >
+          <Icon name={'logout'} color={paperTheme.colors.onError} />
         </TouchableOpacity>
       </View>
 
@@ -125,7 +177,12 @@ const UserHeader = ({ user, router, handleLogout }) => {
               rounded={theme.radius.xxl * 1.4}
             />
             <Pressable
-              style={styles.editIcon}
+              style={[
+                styles.editIcon,
+                {
+                  shadowColor: paperTheme.colors.shadow,
+                },
+              ]}
               onPress={() => router.push('/editProfile')}
             >
               {/* name: edit */}
@@ -134,25 +191,64 @@ const UserHeader = ({ user, router, handleLogout }) => {
           </View>
 
           <View style={{ alignItems: 'center' }}>
-            <Text style={styles.username}>{user && user.name}</Text>
-            <Text style={styles.infoText}>{user && user.address}</Text>
+            <Text
+              style={[
+                styles.username,
+                {
+                  color: paperTheme.colors.onBackground,
+                },
+              ]}
+            >
+              {user && user.name}
+            </Text>
+            <Text
+              style={[
+                styles.infoText,
+                {
+                  color: paperTheme.colors.onSurface,
+                },
+              ]}
+            >
+              {user && user.address}
+            </Text>
           </View>
 
           <View style={{ gap: 10 }}>
             <View style={styles.info}>
               {/* name mail */}
-              <Icon name='email' color={theme.colors.textLight} />
-              <Text style={styles.infoText}>{user && user.email}</Text>
+              <Icon name='email' color={paperTheme.colors.secondary} />
+              <Text
+                style={[
+                  styles.infoText,
+                  { color: paperTheme.colors.onBackground },
+                ]}
+              >
+                {user && user.email}
+              </Text>
             </View>
             {user && user?.phoneNumber && (
               <View style={styles.info}>
                 {/* name call/phone */}
-                <Icon name='phone' color={theme.colors.textLight} />
-                <Text style={styles.infoText}>{user && user.phoneNumber}</Text>
+                <Icon name='phone' color={paperTheme.colors.secondary} />
+                <Text
+                  style={[
+                    styles.infoText,
+                    { color: paperTheme.colors.onBackground },
+                  ]}
+                >
+                  {user && user.phoneNumber}
+                </Text>
               </View>
             )}
             {user && user?.bio && (
-              <Text style={styles.infoText}>{user && user.bio}</Text>
+              <Text
+                style={[
+                  styles.infoText,
+                  { color: paperTheme.colors.onBackground },
+                ]}
+              >
+                {user && user.bio}
+              </Text>
             )}
           </View>
         </View>
@@ -178,7 +274,7 @@ const styles = StyleSheet.create({
     marginHorizontal: wp(4),
   },
   title: {
-    color: theme.colors.text,
+    // color: theme.colors.text,
     fontSize: hp(3.2),
     // @ts-ignore
     fontWeight: theme.fonts.bold,
@@ -188,7 +284,7 @@ const styles = StyleSheet.create({
     width: hp(4.3),
     borderRadius: theme.radius.sm,
     borderCurve: 'continuous',
-    borderColor: theme.colors.gray,
+    // borderColor: theme.colors.gray,
     borderWidth: 3,
   },
 
@@ -218,7 +314,6 @@ const styles = StyleSheet.create({
     padding: 7,
     borderRadius: 50,
     backgroundColor: 'white',
-    shadowColor: theme.colors.textLight,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 5,
@@ -227,7 +322,6 @@ const styles = StyleSheet.create({
   username: {
     fontSize: hp(3),
     fontWeight: '500',
-    color: theme.colors.textDark,
   },
   info: {
     flexDirection: 'row',
@@ -237,14 +331,12 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: hp(1.6),
     fontWeight: '500',
-    color: theme.colors.textLight,
   },
   logoutButton: {
     position: 'absolute',
     right: 0,
     padding: 5,
     borderRadius: theme.radius.sm,
-    backgroundColor: '#fee2e2',
   },
   listStyle: {
     paddingHorizontal: wp(4),
@@ -253,7 +345,6 @@ const styles = StyleSheet.create({
   noPosts: {
     fontSize: hp(2),
     textAlign: 'center',
-    color: theme.colors.text,
   },
   pill: {
     position: 'absolute',
@@ -264,7 +355,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 20,
-    backgroundColor: theme.colors.roseLight,
+    // backgroundColor: theme.colors.roseLight,
   },
   pillText: {
     color: 'white',

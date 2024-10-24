@@ -13,13 +13,13 @@ export const getUserImageSrc = (imagePath: string) => {
 };
 
 export const getSupabaseFileUrl = (filePath: string) => {
-  if (filePath) {
-    return {
-      uri: `${supabaseUrl}/storage/v1/object/public/uploads/${filePath}`,
-    };
-  }
+  if (!filePath) return null;
 
-  return null;
+  return {
+    uri: filePath.includes('dicebear')
+      ? filePath
+      : `${supabaseUrl}/storage/v1/object/public/uploads/${filePath}`,
+  };
 };
 
 export const downloadFile = async (url: string) => {

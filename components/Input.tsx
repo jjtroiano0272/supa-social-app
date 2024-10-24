@@ -1,19 +1,40 @@
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import React from 'react';
 import { Link } from 'expo-router';
 import { theme } from '@/constants/theme';
 import { hp } from '@/helpers/common';
+import {
+  useTheme,
+  TextInput as PaperInput,
+  Chip as PaperChip,
+} from 'react-native-paper';
+import { Chip as MaterialChip } from '@react-native-material/core';
 
-const Input = (props: any) => {
+const Input = (props: any, withChip = false) => {
+  const paperTheme = useTheme();
+
   return (
     <View
-      style={[styles.container, props.containerStyle && props.containerStyle]}
+      style={[
+        styles.container,
+        {
+          borderColor: paperTheme.colors.outline,
+        },
+        props.containerStyle && props.containerStyle,
+      ]}
     >
       {props.icon && props.icon}
       <TextInput
-        style={{ flex: 1 }}
-        placeholderTextColor={theme.colors.textLight}
+        style={{ flex: 1, color: paperTheme.colors.onBackground }}
+        placeholderTextColor={paperTheme.colors.secondary}
         ref={props.inputRef && props.inputRef}
+        autoCapitalize='sentences'
+        hitSlop={{
+          bottom: 20,
+          top: 20,
+          left: 20,
+          right: 20,
+        }}
         {...props}
       />
     </View>
@@ -29,7 +50,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 0.4,
-    borderColor: theme.colors.text,
     borderRadius: theme.radius.xxl,
     borderCurve: 'continuous',
     paddingHorizontal: 18,

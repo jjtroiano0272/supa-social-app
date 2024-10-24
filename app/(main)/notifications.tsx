@@ -8,8 +8,11 @@ import { theme } from '@/constants/theme';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import NotificationItem from '@/components/NotificationItem';
 import Header from '@/components/Header';
+import { useTheme as usePaperTheme } from 'react-native-paper';
+import { translate } from '@/i18n';
 
 const Notifications = () => {
+  const paperTheme = usePaperTheme();
   const [notifications, setNotifications] = useState([]);
   const { user } = useAuth();
   const router = useRouter();
@@ -29,7 +32,10 @@ const Notifications = () => {
   return (
     <ScreenWrapper>
       <View style={styles.container}>
-        <Header title={'Notifications'} showBackButton={true} />
+        <Header
+          title={translate('common:notifications')}
+          showBackButton={true}
+        />
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listStyle}
@@ -39,7 +45,18 @@ const Notifications = () => {
               <NotificationItem item={item} key={item?.id} router={router} />
             );
           })}
-          {notifications.length == 0 && <Text style={styles.noData}></Text>}
+          {notifications.length == 0 && (
+            <Text
+              style={[
+                styles.noData,
+                {
+                  color: paperTheme.colors.onBackground,
+                },
+              ]}
+            >
+              {translate('common:allCaughtUp')}
+            </Text>
+          )}
         </ScrollView>
       </View>
     </ScreenWrapper>
@@ -58,7 +75,6 @@ const styles = StyleSheet.create({
     fontSize: hp(1.8),
     // @ts-ignore
     fontWeight: theme.fonts.medium,
-    color: theme.colors.text,
     textAlign: 'center',
   },
 });

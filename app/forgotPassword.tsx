@@ -7,55 +7,85 @@ import {
   View,
 } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, router, useRouter } from 'expo-router';
-import Icon from '../assets/icons';
+import { Link, useRouter } from 'expo-router';
 import ScreenWrapper from '@/components/ScreenWrapper';
-import { StatusBar } from 'expo-status-bar';
 import BackButton from '@/components/BackButton';
+import { useTheme as usePaperTheme } from 'react-native-paper';
+import { translate } from '@/i18n';
 import { hp, wp } from '@/helpers/common';
-import { theme } from '@/constants/theme';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
+import Icon from '@/assets/icons';
+import { theme } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
-import { useTheme as usePaperTheme } from 'react-native-paper';
 import * as Haptics from 'expo-haptics';
-import { translate } from '@/i18n';
 
-const Login = () => {
-  const paperTheme = usePaperTheme();
+const ForgotPassword = () => {
   const router = useRouter();
-  const emailRef = useRef('');
-  const passwordRef = useRef('');
+  const paperTheme = usePaperTheme();
   const [loading, setLoading] = useState(false);
+  const emailRef = useRef('');
 
   const onSubmit = async () => {
-    if (!emailRef.current || !passwordRef.current) {
-      Alert.alert('Login', 'Fields missing!');
+    if (!emailRef.current) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Alert.alert(
+        translate('forgotPasswordScreen:title'),
+        translate('forgotPasswordScreen:alerts.emailMissing')
+      );
+      return;
     }
 
-    // cleared to run
-    let email = emailRef.current.trim();
-    let password = passwordRef.current.trim();
-
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    const { data, error } = await supabase.auth.resetPasswordForEmail(
+      emailRef?.current
+    );
+    // Clear all input fields
+    console.log(`data: ${JSON.stringify(data, null, 2)}`);
     setLoading(false);
 
     if (error) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Login', error.message);
-      setLoading(false);
+      Alert.alert(
+        'Reset Password',
+        'There was an error sending the password reset.'
+      );
+      console.log(
+        `onSubmitForgotPassword error: ${JSON.stringify(error, null, 2)}`
+      );
     }
   };
 
+  useEffect(() => {
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event == 'PASSWORD_RECOVERY') {
+        const newPassword = prompt(
+          translate('forgotPasswordScreen:newPasswordPrompt')
+        );
+        const { data, error } = await supabase.auth.updateUser({
+          password: newPassword,
+        });
+
+        // on success
+        if (data) {
+          alert(translate('forgotPasswordScreen:passwordUpdateSuccess'));
+          // log user in the same way we do with login.tsx
+          let email = emailRef.current.trim();
+
+          setLoading(true);
+          const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password: newPassword,
+          });
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          setLoading(false);
+        }
+        if (error) alert(translate('forgotPasswordScreen:passwordUpdateError'));
+      }
+    });
+  }, []);
+
   return (
     <ScreenWrapper>
-      {/* <StatusBar style='dark' /> */}
       <View style={styles.container}>
         <BackButton router={router} />
 
@@ -68,54 +98,26 @@ const Login = () => {
               },
             ]}
           >
-            {translate('loginScreen:welcomeBack1')}
-          </Text>
-          <Text
-            style={[
-              styles.welcomeText,
-              {
-                color: paperTheme.colors.onBackground,
-              },
-            ]}
-          >
-            {translate('loginScreen:welcomeBack2')}
+            {translate('forgotPasswordScreen:title')}
           </Text>
         </View>
 
         {/* form */}
         <View style={styles.form}>
-          <Text
-            style={{ fontSize: hp(1.5), color: paperTheme.colors.onBackground }}
-          >
-            {translate('loginScreen:pleaseLogin')}
-          </Text>
-          {/* @56:00 */}
           <Input
             icon={<Icon name='email' size={26} strokeWidth={1.6} />}
             placeholder={translate('common:emailInputPlaceholder')}
             onChangeText={(value: string) => (emailRef.current = value)}
           />
-          <Input
+          {/* <Input
             icon={<Icon name='lockPassword' size={26} strokeWidth={1.6} />}
             placeholder={translate('common:passwordInputPlaceholder')}
             secureTextEntry
             onChangeText={(value: string) => (passwordRef.current = value)}
-          />
-          <TouchableOpacity onPress={() => router.push('/forgotPassword')}>
-            <Text
-              style={[
-                styles.forgotPassword,
-                {
-                  color: paperTheme.colors.onBackground,
-                },
-              ]}
-            >
-              {translate('common:forgotPassword')}
-            </Text>
-          </TouchableOpacity>
+          /> */}
 
           <Button
-            title={translate('common:login')}
+            title={translate('forgotPasswordScreen:sendReset')}
             loading={loading}
             onPress={onSubmit}
           />
@@ -152,7 +154,7 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ForgotPassword;
 
 const styles = StyleSheet.create({
   container: {

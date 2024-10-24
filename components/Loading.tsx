@@ -2,17 +2,23 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import React from 'react';
 import { Link } from 'expo-router';
 import { theme } from '@/constants/theme';
+import { useTheme } from 'react-native-paper';
 
 const Loading = ({
   size = 'large',
-  color = theme.colors.primary,
+  color,
 }: {
   size?: number | 'large' | 'small' | undefined;
   color?: string;
 }) => {
+  const paperTheme = useTheme();
+
   return (
     <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-      <ActivityIndicator size={size} color={color} />
+      <ActivityIndicator
+        size={size}
+        color={color ?? paperTheme.colors.primary}
+      />
     </View>
   );
 };

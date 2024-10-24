@@ -5,6 +5,7 @@ import { hp } from '@/helpers/common';
 import { theme } from '@/constants/theme';
 import { Image } from 'expo-image';
 import { getUserImageSrc } from '@/services/imageService';
+import { useTheme as usePaperTheme } from 'react-native-paper';
 
 const Avatar = ({
   uri,
@@ -12,13 +13,20 @@ const Avatar = ({
   rounded = theme.radius.md,
   style = {},
 }: any) => {
+  const paperTheme = usePaperTheme();
+
   return (
     <Image
-      source={getUserImageSrc(uri)}
+      source={!uri?.includes('dicebear') ? getUserImageSrc(uri) : { uri: uri }}
       transition={100}
       style={[
         styles.avatar,
-        { height: size, width: size, borderRadius: rounded },
+        {
+          height: size,
+          width: size,
+          borderRadius: rounded,
+          borderColor: paperTheme.colors.outline,
+        },
         style,
       ]}
     />
@@ -32,7 +40,6 @@ const styles = StyleSheet.create({
   textHeader: { fontSize: 42 },
   avatar: {
     borderCurve: 'continuous',
-    borderColor: theme.colors.darkLight,
     borderWidth: 1,
   },
 });

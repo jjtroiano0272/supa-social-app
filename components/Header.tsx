@@ -4,8 +4,10 @@ import { Link, useRouter } from 'expo-router';
 import BackButton from './BackButton';
 import { hp } from '@/helpers/common';
 import { theme } from '@/constants/theme';
+import { useTheme } from 'react-native-paper';
 
 const Header = ({ title, showBackButton = false, mb = 10 }) => {
+  const paperTheme = useTheme();
   const router = useRouter();
 
   return (
@@ -15,7 +17,16 @@ const Header = ({ title, showBackButton = false, mb = 10 }) => {
           <BackButton router={router} />
         </View>
       )}
-      <Text style={styles.title}>{title || ''}</Text>
+      <Text
+        style={[
+          styles.title,
+          {
+            color: paperTheme.colors.onBackground,
+          },
+        ]}
+      >
+        {title || ''}
+      </Text>
     </View>
   );
 };
@@ -35,7 +46,6 @@ const styles = StyleSheet.create({
     fontSize: hp(2.7),
     // @ts-ignore
     fontWeight: theme.fonts.semibold,
-    color: theme.colors.textDark,
   },
   textHeader: { fontSize: 42 },
   backButton: { position: 'absolute', left: 0 },

@@ -7,6 +7,7 @@ import {
   Touchable,
   Alert,
   Share,
+  Pressable,
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'expo-router';
@@ -20,19 +21,10 @@ import { downloadFile, getSupabaseFileUrl } from '@/services/imageService';
 import { Video } from 'expo-av';
 import { createPostLike, removePostLike } from '@/services/postService';
 import Loading from './Loading';
-
-const textStyle = {
-  color: theme.colors.dark,
-  fontSize: hp(1.75),
-};
-
-const tagsStyle = {
-  div: textStyle,
-  p: textStyle,
-  ol: textStyle,
-  h1: { color: theme.colors.dark },
-  h4: { color: theme.colors.dark },
-};
+import { useTheme as usePaperTheme } from 'react-native-paper';
+import * as Haptics from 'expo-haptics';
+import * as Clipboard from 'expo-clipboard';
+import { translate } from '@/i18n';
 
 const PostCard = ({
   item,
@@ -44,6 +36,21 @@ const PostCard = ({
   onDelete = () => {},
   onEdit = () => {},
 }: any) => {
+  const paperTheme = usePaperTheme();
+
+  const textStyle = {
+    color: paperTheme.colors.onBackground,
+    fontSize: hp(1.75),
+  };
+
+  const tagsStyle = {
+    div: textStyle,
+    p: textStyle,
+    ol: textStyle,
+    h1: { color: paperTheme.colors.onBackground },
+    h4: { color: paperTheme.colors.onBackground },
+  };
+
   const shadowStyles = {
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -70,7 +77,9 @@ const PostCard = ({
   };
 
   const onLike = async () => {
+    // Remove like if it's already been liked, otherwise like the post
     if (liked) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       let updatedLikes = likes.filter(like => like.userId != currentUser?.id);
 
       setLikes([...updatedLikes]);
@@ -79,13 +88,17 @@ const PostCard = ({
 
       if (!res.success) Alert.alert('Post', 'Could not unlike post!');
     } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       let data = { userId: currentUser?.id, postId: item?.id };
 
       setLikes([...likes, data]);
       let res = await createPostLike(data);
       console.log(`postLike res: ${JSON.stringify(res, null, 2)}`);
 
-      if (!res.success) Alert.alert('Post', 'Something went wrong!');
+      if (!res.success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert('Post', 'Something went wrong!');
+      }
     }
   };
 
@@ -115,12 +128,36 @@ const PostCard = ({
     ]);
   };
 
+  const handleCopyFormula = async (str: string, type?: 'partial') => {
+    try {
+      await Clipboard.setStringAsync(str);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      // setTextCopied(true);
+      // setTimeout(() => {
+      //   setTextCopied(false);
+      // }, 1000);
+    } catch (error) {
+      console.error(`some error in handleCopyItem: ${error}`);
+      return null;
+    }
+  };
+
   const liked = likes.filter(like => like.userId == currentUser?.id)[0]
     ? true
     : false;
 
   return (
-    <View style={[styles.container, hasShadow && shadowStyles]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: paperTheme.colors.background,
+          borderColor: paperTheme.colors.secondary,
+        },
+        hasShadow && shadowStyles,
+      ]}
+    >
       <View style={styles.header}>
         <View style={styles.userInfo}>
           <Avatar
@@ -129,8 +166,26 @@ const PostCard = ({
             rounded={theme.radius.md}
           />
           <View style={{ gap: 2 }}>
-            <Text style={styles.username}>{item?.user?.name}</Text>
-            <Text style={styles.postTime}>{created_at}</Text>
+            <Text
+              style={[
+                styles.username,
+                {
+                  color: paperTheme.colors.onBackground,
+                },
+              ]}
+            >
+              {item?.user?.name || '[deleted]'}
+            </Text>
+            <Text
+              style={[
+                styles.postTime,
+                {
+                  color: paperTheme.colors.secondary,
+                },
+              ]}
+            >
+              {created_at}
+            </Text>
           </View>
         </View>
 
@@ -140,7 +195,7 @@ const PostCard = ({
               name='moreHorizontal'
               size={hp(3.4)}
               strokeWidth={3}
-              color={theme.colors.text}
+              color={paperTheme.colors.onBackground}
             />
           </TouchableOpacity>
         )}
@@ -148,17 +203,87 @@ const PostCard = ({
         {showDelete && currentUser.id == item?.userId && (
           <View style={styles.actions}>
             <TouchableOpacity onPress={() => onEdit(item)}>
-              <Icon name='edit' size={hp(2.5)} color={theme.colors.text} />
+              <Icon
+                name='edit'
+                size={hp(2.5)}
+                color={paperTheme.colors.onBackground}
+              />
             </TouchableOpacity>
             <TouchableOpacity onPress={handlePostDelete}>
-              <Icon name='delete' size={hp(2.5)} color={theme.colors.rose} />
+              <Icon
+                name='delete'
+                size={hp(2.5)}
+                color={paperTheme.colors.error}
+              />
             </TouchableOpacity>
           </View>
         )}
       </View>
 
-      <View style={styles.content}>
+      {/* Post details */}
+      <Pressable style={styles.content} onPress={openPostDetails}>
         <View style={styles.postBody}>
+          {/* Client's name */}
+          {item?.client_name && (
+            <Text
+              // @ts-ignore
+              style={{
+                color: paperTheme.colors.secondary,
+                fontWeight: theme.fonts.semibold,
+                marginVertical: 10,
+              }}
+            >
+              {`>>`} {translate('homeScreen:clientName')}: {item.client_name}
+            </Text>
+          )}
+
+          {/* Client formula, as chips or cards?...discrete data */}
+          {item?.formula_info &&
+            item?.formula_info.formula_type &&
+            item?.formula_info.formula_description && (
+              <Pressable
+                style={{
+                  backgroundColor: paperTheme.colors.elevation.level2,
+                  borderRadius: theme.radius.md,
+                  padding: 12,
+                  marginBottom: 5,
+                }}
+                onPress={() =>
+                  handleCopyFormula(item.formula_info.formula_description)
+                }
+              >
+                <Text
+                  // @ts-ignore
+                  style={{
+                    color: paperTheme.colors.secondary,
+                    fontWeight: theme.fonts.semibold,
+                  }}
+                >
+                  {item.formula_info?.formula_type.toUpperCase()}
+                </Text>
+
+                {item.formula_info?.formula_description && (
+                  <View style={{ left: 15 }}>
+                    {item.formula_info?.formula_description
+                      ?.split('+')
+                      .map((x: string, index: number) => (
+                        <Text
+                          key={index}
+                          // @ts-ignore
+                          style={{
+                            color: paperTheme.colors.secondary,
+                            fontWeight: theme.fonts.medium,
+                          }}
+                        >
+                          {x.trim()}
+                        </Text>
+                      ))}
+                  </View>
+                )}
+              </Pressable>
+            )}
+
+          {/* Details about client */}
           {item?.body && (
             <RenderHtml
               contentWidth={wp(100)}
@@ -167,26 +292,30 @@ const PostCard = ({
             />
           )}
         </View>
-      </View>
+      </Pressable>
 
       {/* post image */}
       {item?.file && item?.file?.includes('postImages') && (
-        <Image
-          source={getSupabaseFileUrl(item?.file)!}
-          transition={100}
-          style={styles.postMedia}
-          contentFit='cover'
-        />
+        <Pressable onPress={openPostDetails}>
+          <Image
+            source={getSupabaseFileUrl(item?.file)!}
+            transition={100}
+            style={styles.postMedia}
+            contentFit='cover'
+          />
+        </Pressable>
       )}
       {/* post video */}
       {item?.file && item?.file?.includes('postVideos') && (
-        <Video
-          style={[styles.postMedia, { height: hp(30) }]}
-          source={getSupabaseFileUrl(item?.file)}
-          useNativeControls
-          resizeMode='cover'
-          isLooping
-        />
+        <Pressable onPress={openPostDetails}>
+          <Video
+            style={[styles.postMedia, { height: hp(30) }]}
+            source={getSupabaseFileUrl(item?.file)}
+            useNativeControls
+            resizeMode='cover'
+            isLooping
+          />
+        </Pressable>
       )}
 
       {/* likeables */}
@@ -196,24 +325,52 @@ const PostCard = ({
             <Icon
               name='heart'
               size={24}
-              fill={liked ? theme.colors.rose : 'transparent'}
-              color={liked ? theme.colors.rose : theme.colors.textLight}
+              fill={liked ? paperTheme.colors.error : 'transparent'}
+              color={
+                liked ? paperTheme.colors.error : paperTheme.colors.secondary
+              }
             />
           </TouchableOpacity>
-          <Text style={styles.count}>{likes.length}</Text>
+          <Text
+            style={[
+              styles.count,
+              {
+                color: paperTheme.colors.onBackground,
+              },
+            ]}
+          >
+            {likes.length}
+          </Text>
         </View>
         <View style={styles.footerButton}>
           <TouchableOpacity onPress={openPostDetails}>
-            <Icon name='comment' size={24} color={theme.colors.textLight} />
+            <Icon
+              name='comment'
+              size={24}
+              color={paperTheme.colors.secondary}
+            />
           </TouchableOpacity>
-          <Text style={styles.count}>{item?.comments[0]?.count}</Text>
+          <Text
+            style={[
+              styles.count,
+              {
+                color: paperTheme.colors.onBackground,
+              },
+            ]}
+          >
+            {item?.comments[0]?.count}
+          </Text>
         </View>
         <View style={styles.footerButton}>
           {loading ? (
             <Loading size={'small'} />
           ) : (
             <TouchableOpacity onPress={onShare}>
-              <Icon name='share' size={24} color={theme.colors.textLight} />
+              <Icon
+                name='share'
+                size={24}
+                color={paperTheme.colors.secondary}
+              />
             </TouchableOpacity>
           )}
         </View>
@@ -232,9 +389,7 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
     padding: 10,
     paddingVertical: 12,
-    backgroundColor: 'white',
     borderWidth: 0.5,
-    borderColor: theme.colors.gray,
     shadowColor: '#000',
   },
   header: { flexDirection: 'row', justifyContent: 'space-between' },
@@ -245,13 +400,11 @@ const styles = StyleSheet.create({
   },
   username: {
     fontSize: hp(1.7),
-    color: theme.colors.textDark,
     // @ts-ignore
     fontWeight: theme.fonts.medium,
   },
   postTime: {
     fontSize: hp(1.4),
-    color: theme.colors.textLight,
     // @ts-ignore
     fontWeight: theme.fonts.medium,
   },
@@ -285,7 +438,6 @@ const styles = StyleSheet.create({
     gap: 18,
   },
   count: {
-    color: theme.colors.text,
     fontSize: hp(1.8),
   },
 });

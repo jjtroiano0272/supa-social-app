@@ -11,6 +11,8 @@ import { Link } from 'expo-router';
 import { theme } from '@/constants/theme';
 import { hp } from '@/helpers/common';
 import Loading from './Loading';
+import { useTheme as usePaperTheme } from 'react-native-paper';
+import * as Haptics from 'expo-haptics';
 
 type ButtonProps = {
   // age?: number
@@ -30,8 +32,9 @@ const Button = ({
   loading = false,
   hasShadow = true,
 }: ButtonProps) => {
+  const paperTheme = usePaperTheme();
   const shadowStyle = {
-    shadowColor: theme.colors.dark,
+    shadowColor: paperTheme.colors.shadow,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -40,7 +43,13 @@ const Button = ({
 
   if (loading) {
     return (
-      <View style={[styles.button, buttonStyle, { backgroundColor: 'white' }]}>
+      <View
+        style={[
+          styles.button,
+          buttonStyle,
+          { backgroundColor: paperTheme.colors.background },
+        ]}
+      >
         <Loading />
       </View>
     );
@@ -48,9 +57,26 @@ const Button = ({
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.button, buttonStyle, hasShadow && shadowStyle]}
+      style={[
+        styles.button,
+        {
+          backgroundColor: paperTheme.colors.primary,
+        },
+        buttonStyle,
+        hasShadow && shadowStyle,
+      ]}
     >
-      <Text style={[styles.text, textStyle]}>{title}</Text>
+      <Text
+        style={[
+          styles.text,
+          {
+            color: paperTheme.colors.onPrimary,
+          },
+          textStyle,
+        ]}
+      >
+        {title}
+      </Text>
     </Pressable>
   );
 };
@@ -61,7 +87,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   textHeader: { fontSize: 42 },
   button: {
-    backgroundColor: theme.colors.primary,
     height: hp(6.6),
     justifyContent: 'center',
     alignItems: 'center',
@@ -70,7 +95,6 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: hp(2.5),
-    color: 'white',
     // @ts-ignore
     fontWeight: theme.fonts.bold,
   },

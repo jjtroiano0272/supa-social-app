@@ -25,10 +25,14 @@ import { getUserData } from '@/services/userService';
 import { useAppTheme } from '@/utils/useAppTheme';
 import { ThemedStyle } from '@/theme';
 import { useTheme } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
+import { translate } from '@/i18n';
 
 var limit = 0;
 
 const Home = () => {
+  const { t } = useTranslation();
+  const paperTheme = useTheme();
   const { user, setAuth } = useAuth();
   const router = useRouter();
   const [posts, setPosts] = useState<any>([]);
@@ -47,7 +51,7 @@ const Home = () => {
       setPosts((prevPosts: any[]) => [newPost, ...prevPosts]);
     }
 
-    if (payload.eventType == 'DELETE' && payload.old.id) {
+    if (payload.eventType == 'DELETE' && payload?.old?.id) {
       setPosts((prevPosts: any) => {
         let updatedPosts = prevPosts.filter(
           (post: any) => post.id != payload.old.id
@@ -76,7 +80,7 @@ const Home = () => {
   const handleNewNotification = async (payload: any) => {
     console.log(`notification payload: ${JSON.stringify(payload, null, 2)}`);
 
-    if (payload.eventType == 'INSERT' && payload.new.id) {
+    if (payload.eventType == 'INSERT' && payload?.new?.id) {
       setNotificationCount(prev => prev + 1);
     }
   };
@@ -105,7 +109,7 @@ const Home = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'notifications',
-          filter: `receiverId=eq.${user.id}`,
+          filter: `receiverId=eq.${user?.id}`,
         },
         handleNewNotification
       )
@@ -122,7 +126,6 @@ const Home = () => {
     limit = limit + 10;
 
     let res = await fetchPosts(limit);
-    console.log(`Post result: ${JSON.stringify(res, null, 2)}`);
 
     if (res.success) {
       if (posts.length == res.data.length) {
@@ -133,14 +136,16 @@ const Home = () => {
     }
   };
 
-  // const colorScheme = useColorScheme();
-  const paperTheme = useTheme();
+  console.log(`user: ${JSON.stringify(user, null, 2)}`);
 
   return (
-    <ScreenWrapper bg={paperTheme.colors.background}>
+    <ScreenWrapper>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>FourStrands</Text>
+          <Text style={[styles.title, { color: paperTheme.colors.secondary }]}>
+            {/* App name */}
+            Pelli
+          </Text>
           <View style={styles.icons}>
             <Pressable
               onPress={() => {
@@ -152,11 +157,27 @@ const Home = () => {
                 name='notification' // heart
                 size={hp(3.2)}
                 strokeWidth={2}
-                color={theme.colors.text}
+                color={paperTheme.colors.secondary}
               />
               {notificationCount > 0 && (
-                <View style={styles.pill}>
-                  <Text style={styles.pillText}>{notificationCount}</Text>
+                <View
+                  style={[
+                    styles.pill,
+                    {
+                      backgroundColor: paperTheme.colors.error,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.pillText,
+                      {
+                        color: paperTheme.colors.onError,
+                      },
+                    ]}
+                  >
+                    {notificationCount}
+                  </Text>
                 </View>
               )}
             </Pressable>
@@ -165,7 +186,7 @@ const Home = () => {
                 name='addCircle' // plus
                 size={hp(3.2)}
                 strokeWidth={2}
-                color={theme.colors.text}
+                color={paperTheme.colors.secondary}
               />
             </Pressable>
             <Pressable onPress={() => router.push('/profile')}>
@@ -183,13 +204,12 @@ const Home = () => {
           data={posts}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listStyle}
-          keyExtractor={(item: any) => item.id.toString()}
+          keyExtractor={(item: any) => item?.id?.toString()}
           renderItem={({ item }) => (
             <PostCard item={item} currentUser={user} router={router} />
           )}
           onEndReached={() => {
             getPosts();
-            console.log('End reached!');
           }}
           ListFooterComponent={
             hasMore ? (
@@ -198,7 +218,14 @@ const Home = () => {
               </View>
             ) : (
               <View style={{ marginVertical: 30 }}>
-                <Text style={styles.noPosts}>Nothing more here!</Text>
+                <Text
+                  style={[
+                    styles.noPosts,
+                    { color: paperTheme.colors.secondary },
+                  ]}
+                >
+                  {translate('common:endOfList')}
+                </Text>
               </View>
             )
           }
@@ -223,7 +250,6 @@ const styles = StyleSheet.create({
     marginHorizontal: wp(4),
   },
   title: {
-    color: theme.colors.text,
     fontSize: hp(3.2),
     // @ts-ignore
     fontWeight: theme.fonts.bold,
@@ -233,7 +259,7 @@ const styles = StyleSheet.create({
     width: hp(4.3),
     borderRadius: theme.radius.sm,
     borderCurve: 'continuous',
-    borderColor: theme.colors.gray,
+    // borderColor: theme.colors.gray,
     borderWidth: 3,
   },
 
@@ -250,7 +276,6 @@ const styles = StyleSheet.create({
   noPosts: {
     fontSize: hp(2),
     textAlign: 'center',
-    color: theme.colors.text,
   },
   pill: {
     position: 'absolute',
@@ -261,10 +286,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 20,
-    backgroundColor: theme.colors.roseLight,
   },
   pillText: {
-    color: 'white',
     fontSize: hp(1.2),
     // @ts-ignore
     fontWeight: theme.fonts.bold,
